@@ -1,0 +1,12 @@
+Package: DecisionAnalysis
+Title: Dx Decision Analysis
+Version: 0.1
+Authors@R: person("Nirmalya", "Bandyopadhyay", email = "nirmalya@broadinstitute.org", role = c("aut", "cre"))
+Description: Decision Analysis for Dx project
+Depends: R (>= 3.4.3),
+    caret,
+    ggplot2,
+    CORElearn,
+License: Apache License, Version 2.0
+Encoding: UTF-8
+LazyData: true
