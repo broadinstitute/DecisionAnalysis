@@ -7,6 +7,9 @@ Depends: R (>= 3.4.3),
     caret,
     ggplot2,
     CORElearn,
+    docopt,
+    rentrez,
+    plyr
 License: Apache License, Version 2.0
 Encoding: UTF-8
 LazyData: true
