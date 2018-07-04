@@ -1,4 +1,4 @@
-load_data <- function(inpath, sepstr) {
+loadData <- function(inpath, sepstr) {
 
     expdata1 <- read.csv(inpath, header = FALSE, sep = sepstr, row.names = 1, stringsAsFactors = FALSE)
 

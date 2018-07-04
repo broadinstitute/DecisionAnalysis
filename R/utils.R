@@ -9,7 +9,7 @@ doPartitionAlternate <- function(alldata) {
     inter_names <- NA    
     if ("I" %in% lclass) {
         inter1 <- subset(lclass, "I" == lclass)
-        inter <- droplevels(inter)
+        inter <- droplevels(inter1)
         lclass_names <- names(lclass)
         inter_names <- names(inter)
         lclass_no_inter_names <- setdiff(lclass_names, inter_names)
@@ -18,7 +18,12 @@ doPartitionAlternate <- function(alldata) {
     } else {
         lclass_next <- lclass
     }
-    
+
+    odd <- seq(1, length(lclass_next), 2)
+    even <- seq(2, length(lclass_next), 2)
+    trainC <- lclass_next[odd]
+    testC <- lclass_next[even]
+   
     testC_final <- NA
     if (!is.na(inter_names)) {
         # Put the inter_names into the test set
@@ -33,11 +38,6 @@ doPartitionAlternate <- function(alldata) {
         testC_final <- testC
     }
 
-    odd <- seq(1, length(lclass_next), 2)
-    even <- seq(2, length(lclass_next), 2)
-    trainC <- lclass_next[odd]
-    testC <- lclass_next[even]
-
     alldata2 <- c(alldata, list(trainC = trainC, testC = testC_final))
     return (alldata2)
 }
@@ -51,7 +51,7 @@ getCVCount <- function(classLabels) {
 }
 
 
-getFeaturesReliefF <- function(cdata, trainC, ltimes = 5, featureCount = 5, lEst = "ReliefFexpRank") {
+getFeaturesReliefF <- function(cdata, trainC, featureCount = 10, ltimes = 5, lEst = "ReliefFexpRank") {
 
     #trainC <- alldata$trainC
     #cdata <- alldata$cdata
@@ -105,8 +105,6 @@ do_train <- function(trainExp, trainC) {
 
     return (modT)
 }
-
-
 
 
 do_predict <- function(testData, modT) {
