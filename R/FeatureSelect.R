@@ -1,6 +1,6 @@
-featureSelect <- function(infile, outdir, feature_count, use_all, sep) {
+featureSelect <- function(infile, outdir, feature_count, use_all, no_probe_anno, sep) {
     # Load the data
-    alldata <- loadData(inpath = infile, sepstr = sep)
+    alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
     
     if (use_all != TRUE) {
         exe_without_all_data(alldata, feature_count)

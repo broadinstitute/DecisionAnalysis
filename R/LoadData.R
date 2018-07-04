@@ -1,4 +1,4 @@
-loadData <- function(inpath, sepstr) {
+loadData <- function(inpath, no_probe_anno, sepstr) {
 
     expdata1 <- read.csv(inpath, header = FALSE, sep = sepstr, row.names = 1, stringsAsFactors = FALSE)
 
@@ -24,11 +24,21 @@ loadData <- function(inpath, sepstr) {
 
     probe_names <- rownames(cdata)
 
-    fVals <- lapply(probe_names, getAnnoU)
-    fMap <- unlist(fVals)
-    names(fMap) <- probe_names
+    fMap <- NA
+    if (!no_probe_anno) {
+        fVals <- lapply(probe_names, getAnnoU)
+        fMap <- unlist(fVals)
+        names(fMap) <- probe_names
+    }
 
     alldata <- list(lclass = lclass, MIC = MIC, cdata = cdata, fMap = fMap)
+
+    print("lclass")
+    print(lclass)
+    print("....")
+    print("MIC")
+    print(MIC)
+    print("....")
 
     return (alldata)
 }

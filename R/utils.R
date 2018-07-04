@@ -6,7 +6,7 @@ doPartitionAlternate <- function(alldata) {
     lclass <- alldata$lclass
 
     lclass_next <- NA
-    inter_names <- NA    
+    inter_names <- c() 
     if ("I" %in% lclass) {
         inter1 <- subset(lclass, "I" == lclass)
         inter <- droplevels(inter1)
@@ -25,7 +25,9 @@ doPartitionAlternate <- function(alldata) {
     testC <- lclass_next[even]
    
     testC_final <- NA
-    if (!is.na(inter_names)) {
+    print("inter_names")
+    print(inter_names)
+    if (length(inter_names) > 0) {
         # Put the inter_names into the test set
         testC_names1 <- names(testC)
         testC_vals1 <- as.character(testC)
@@ -33,12 +35,28 @@ doPartitionAlternate <- function(alldata) {
         inter_vals <- rep("R", length(inter_names))
         testC_vals <- c(testC_vals1, inter_vals)
         names(testC_vals) <- testC_names
-        testC_final <- factor(testC_vals)        
+
+        # One has to sort the testC_final with respect to MIC
+        MIC <- alldata$MIC
+        lMIC <- MIC[testC_names]
+        print("lMIC")
+        print(lMIC)
+        lMIC_o <- order(lMIC)
+        print("lMIC_o")
+        print(lMIC_o)
+        testC_final1 <- testC_vals[lMIC_o] 
+
+        testC_final <- factor(testC_final1)  
     } else {
         testC_final <- testC
     }
 
     alldata2 <- c(alldata, list(trainC = trainC, testC = testC_final))
+    print("trainC")
+    print(alldata2$trainC)
+    print("....")
+    print("testC")
+    print(alldata2$testC)
     return (alldata2)
 }
 
