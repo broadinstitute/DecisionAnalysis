@@ -23,7 +23,6 @@ getTrainC_with_all <- function(alldata) {
         trainC <- lclass
     }
     return (trainC)
-    
 }
 
 exe_with_all_data <- function(alldata, feature_count) {
@@ -34,6 +33,11 @@ exe_with_all_data <- function(alldata, feature_count) {
     print("Features with all data:")
     print("-----------------------")
     print(features)
+    print("....")
+    print("trainC")
+    print("....")
+    print(trainC)
+    print("....")
 }
 
 exe_without_all_data <- function(alldata, feature_count) {
@@ -46,16 +50,35 @@ exe_without_all_data <- function(alldata, feature_count) {
     print("Features with all data:")
     print("-----------------------")
     print(features)
+    print("....")
 	# get the expression for the training
 	trainExp <- getExpData(cdata, features, trainC)
 	modT <- do_train(trainExp, trainC)
 	# Do the test
 	testC <- alldata2$testC
+
+    print("trainC")
+    print("....")
+    print(trainC)
+    print("....")
+    print("testC")
+    print("....")
+    print(testC)
+    print("....")
+
 	testExp <- getExpData(cdata, features, testC)
 	prediction <- do_predict(testExp, modT) 
     print("Prediction")
     print("----------")
     print(prediction)
+
+    resClasses <- prediction$resClasses
+    lcmat <- confusionMatrix(resClasses, testC)
+    print("Confusion Matrix")
+    print("....")
+    print(lcmat)
+    print("....")
+
 
 }
 
