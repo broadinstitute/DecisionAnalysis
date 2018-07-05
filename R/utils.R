@@ -127,4 +127,27 @@ do_predict <- function(testData, modT) {
     return (res)
 }
 
+getExpData <- function(cdata, features, labels) {
+
+    labels_names <- names(labels)
+    expdata1 <- cdata[features, labels_names]
+    expdata <- t(expdata1)
+    return(expdata)
+}
+
+
+getTrainC_with_all <- function(alldata) {
+    lclass <- alldata$lclass
+    trainC <- NA
+    if ("I" %in% lclass) {
+        trainC1 <- lclass
+        trainC1[trainC1 == "I"] <- "R"
+        trainC <- droplevels(trainC1)
+    } else {
+        trainC <- lclass
+    }
+    return (trainC)
+}
+
+
 

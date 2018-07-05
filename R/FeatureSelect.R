@@ -12,18 +12,6 @@ featureSelect <- function(infile, outdir, feature_count, use_all, no_probe_anno,
     }
 }
 
-getTrainC_with_all <- function(alldata) {
-    lclass <- alldata$lclass
-    trainC <- NA
-    if ("I" %in% lclass) {
-        trainC1 <- lclass
-        trainC1[trainC1 == "I"] <- "R"
-        trainC <- droplevels(trainC1)
-    } else {
-        trainC <- lclass
-    }
-    return (trainC)
-}
 
 exe_with_all_data <- function(alldata, feature_count) {
 
@@ -82,13 +70,6 @@ exe_without_all_data <- function(alldata, feature_count) {
 
 }
 
-getExpData <- function(cdata, features, labels) {
-
-	labels_names <- names(labels)
-    expdata1 <- cdata[features, labels_names]
-	expdata <- t(expdata1)
-    return(expdata)
-}
 
 doPartitionAlternate <- function(alldata) {
     lclass <- alldata$lclass

@@ -43,6 +43,14 @@ loadData <- function(inpath, no_probe_anno, sepstr) {
     return (alldata)
 }
 
+loadValidateData <- function(inpath, sepstr) {
+
+    expdata1 <- read.csv(inpath, header = TRUE, sep = sepstr, row.names = 1, stringsAsFactors = FALSE)
+
+    return (expdata1)
+
+}
+
 # The annotation of a feature (the species is not provided by the user and hence not checked)
 getAnnoU <- function(feature) {
     
