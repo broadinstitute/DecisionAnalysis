@@ -1,19 +1,19 @@
-featureSelect <- function(infile, outdir, feature_count, use_all, no_probe_anno, sep) {
+featureSelect <- function(infile, outdir, prefix, feature_count, use_all, no_probe_anno, sep) {
     # Load the data
     alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
     
     if (use_all != TRUE) {
-        exe_without_all_data(alldata, feature_count)
+        exe_without_all_data(alldata, feature_count, outdir, prefix)
     } else {
         # Use the entire data for training and feature selection and
         # No validation.
-        exe_with_all_data(alldata, feature_count)
+        exe_with_all_data(alldata, feature_count, outdir, prefix)
 
     }
 }
 
 
-exe_with_all_data <- function(alldata, feature_count) {
+exe_with_all_data <- function(alldata, feature_count, outdir, prefix) {
 
 	trainC <- getTrainC_with_all(alldata)
 	cdata <- alldata$cdata
@@ -26,16 +26,20 @@ exe_with_all_data <- function(alldata, feature_count) {
     print("....")
     print(trainC)
     print("....")
+
+    features_file <- paste0(outdir, "/", prefix, "_features.txt")
+    features_df <- as.data.frame(features)
+    write.table(features_df, file = features_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
 }
 
-exe_without_all_data <- function(alldata, feature_count) {
+exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
 	# Partition the data, use one half for feature selection and training
 	# and other half for validation, generate a figure
 	alldata2 <- doPartitionAlternate(alldata)
 	cdata <- alldata2$cdata
 	trainC <- alldata2$trainC
 	features = getFeaturesReliefF(cdata = cdata, trainC = trainC, featureCount = feature_count)
-    print("Features with all data:")
+    print("Features without all data:")
     print("-----------------------")
     print(features)
     print("....")
@@ -67,6 +71,17 @@ exe_without_all_data <- function(alldata, feature_count) {
     print(lcmat)
     print("....")
 
+    
+    features_file <- paste0(outdir, "/", prefix, "_features.txt")
+    features_df <- as.data.frame(features)
+    write.table(features_df, file = features_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+
+    prediction$"confusionMatrix" <- lcmat
+    pred_file <- paste0(outdir, "/", prefix, "_pred.txt")
+    sink(pred_file)
+    print(prediction)
+    sink()
 
 }
 

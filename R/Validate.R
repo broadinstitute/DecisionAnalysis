@@ -1,10 +1,15 @@
-validate <- function(train_file, validate_file, outdir, feature_count, sep) {
+validate <- function(train_file, validate_file, outdir, prefix, feature_count, sep) {
 
     t_data <-  loadData(inpath = train_file, no_probe_anno = TRUE, sepstr = sep) 
     validate_data <- loadValidateData(inpath = validate_file, sep = sep)
 
     # get the appropriate number of features
     features <- getFeatures(validate_data, feature_count)
+
+    print("features")
+    print("....")
+    print(features)
+    print("....")
 
     # do_train
     trainC <- getTrainC_with_all(t_data)
@@ -27,6 +32,12 @@ validate <- function(train_file, validate_file, outdir, feature_count, sep) {
     print("....")
     print(prediction)
     print("....")
+
+    pred_file <- paste0(outdir, "/", prefix, "_pred_table.txt")
+    sink(pred_file)
+    print(prediction)
+    sink()
+    print("end of prediction")
     
 }
 
