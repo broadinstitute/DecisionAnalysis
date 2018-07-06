@@ -135,14 +135,3 @@ get_title <- function(features, accuracy, fMap, prefix) {
     return (ltitle)
 }
 
-doPartitionAlternate <- function(alldata) {
-    lclass <- alldata$lclass
-    odd <- seq(1, length(lclass), 2)
-    even <- seq(2, length(lclass), 2)
-    trainC <- lclass[odd]
-    testC <- lclass[even]
-    alldata2 <- c(alldata, list(trainC = trainC, testC = testC))
-    return (alldata2)
-}
-
-
