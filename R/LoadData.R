@@ -24,7 +24,8 @@ loadData <- function(inpath, no_probe_anno, sepstr) {
 
     probe_names <- rownames(cdata)
 
-    
+   
+    fMap <- NA 
     if (!no_probe_anno) {
         fVals <- lapply(probe_names, getAnnoU)
         fMap <- unlist(fVals)
