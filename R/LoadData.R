@@ -24,12 +24,15 @@ loadData <- function(inpath, no_probe_anno, sepstr) {
 
     probe_names <- rownames(cdata)
 
-    fMap <- NA
+    
     if (!no_probe_anno) {
         fVals <- lapply(probe_names, getAnnoU)
         fMap <- unlist(fVals)
-        names(fMap) <- probe_names
+    } else {
+        fMap <- probe_names
+        
     }
+    names(fMap) <- probe_names
 
     alldata <- list(lclass = lclass, MIC = MIC, cdata = cdata, fMap = fMap)
 

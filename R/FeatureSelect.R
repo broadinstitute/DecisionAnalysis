@@ -83,8 +83,57 @@ exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
     print(prediction)
     sink()
 
+    plot_file <- paste0(outdir, "/", prefix, "_plot.pdf") 
+    print(plot_file)
+    draw_plot(alldata2, prediction, features, prefix, plot_file)
+
 }
 
+draw_plot <- function(alldata, prediction, features, prefix, plot_file) {
+    con_mat <- prediction$confusionMatrix 
+    accuracy <- as.numeric(con_mat$overall["Accuracy"])
+    resProbs <- prediction$resProbs
+    
+    labels <- alldata$testC[rownames(resProbs)]
+    predSample <- names(alldata$testC)
+    predMIC <- as.numeric(alldata$MIC[predSample])
+    lgroups1 <- paste0(predSample, "_", predMIC)
+    lgroups <- factor(lgroups1, levels = lgroups1)
+
+    mid_point <- max(alldata$MIC[alldata$lclass == 'S'])
+    facet_var1 <- ifelse (predMIC <=mid_point , c('Sus'), c('Res'))
+    facet_var <- factor(facet_var1, levels = c("Sus", "Res"))
+
+    probRes <- data.frame(lnames = rownames(resProbs), probs = resProbs[,1], 
+			types = as.character(labels), lgroups = lgroups, 
+			facet_var = facet_var)
+
+    Palette1 <- c('forestgreen', 'red')
+
+    fMap <- alldata$fMap
+    ltitle <- get_title(features, accuracy, fMap, prefix)
+
+    plt <- ggplot(probRes, aes(x = lgroups, y = probs, colour = facet_var)) +
+        geom_point(size = 3) +
+        facet_grid(. ~ facet_var, scales = "free", space = "free") + 
+        scale_colour_manual(values=Palette1) + 
+        theme(axis.text.x = element_text(size=10,angle= 45))  + 
+        xlab("Strain_MIC") + ylab("Probablity of resistance") +
+		labs(colour='Strain\ngroups') + ggtitle(ltitle) 
+
+    ggsave(plot_file)
+}
+
+get_title <- function(features, accuracy, fMap, prefix) {
+
+    
+    fVals1 <- fMap[features]
+    fVals2 <- substr(fVals1, 1, 50)
+    fVals <- paste(as.character(fVals2), collapse = "\n")
+
+	ltitle <- paste0("Confidence of resistance\n", prefix, "\nAccuracy = ", accuracy, "\n", fVals)
+    return (ltitle)
+}
 
 doPartitionAlternate <- function(alldata) {
     lclass <- alldata$lclass
