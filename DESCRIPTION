@@ -3,8 +3,7 @@ Title: Dx Decision Analysis
 Version: 0.1
 Authors@R: person("Nirmalya", "Bandyopadhyay", email = "nirmalya@broadinstitute.org", role = c("aut", "cre"))
 Description: Decision Analysis for Dx project
-Depends: R,
-    caret,
+Depends: caret,
     ggplot2,
     CORElearn,
     rentrez,
