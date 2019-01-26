@@ -1,4 +1,5 @@
 featureSelect <- function(infile, outdir, prefix, feature_count, use_all, no_probe_anno, sep) {
+     dir.create(outdir, recursive = TRUE)
     # Load the data
     alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
     
@@ -12,6 +13,29 @@ featureSelect <- function(infile, outdir, prefix, feature_count, use_all, no_pro
     }
 }
 
+featureSelect_BS <- function(infile, outdir, prefix, feature_count, no_probe_anno, sep) {
+     dir.create(outdir, recursive = TRUE)
+    # Load the data
+    alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
+    
+	# Partition the data, use one half for feature selection and training
+	# and other half for validation, generate a figure
+	alldata2 <- doPartitionAlternate(alldata)
+	cdata <- alldata2$cdata
+	trainC <- alldata2$trainC
+	features = getFeaturesReliefF(cdata = cdata, trainC = trainC, featureCount = feature_count)
+    print("Features without all data:")
+    print("-----------------------")
+    print(features)
+    print("....")
+
+	trainExp <- getExpData(cdata, features, trainC)
+	testC <- alldata2$testC
+	testExp <- getExpData(cdata, features, testC)
+
+    exe_bootstrap(trainExp, trainC, testExp, outdir, prefix)
+
+}
 
 exe_with_all_data <- function(alldata, feature_count, outdir, prefix) {
 
@@ -96,6 +120,7 @@ exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
     draw_plot(alldata2, prediction, features, prefix, plot_file)
 
 }
+
 
 draw_plot <- function(alldata, prediction, features, prefix, plot_file) {
     con_mat <- prediction$confusionMatrix 

@@ -150,4 +150,84 @@ getTrainC_with_all <- function(alldata) {
 }
 
 
+exe_bootstrap <- function(trainExp, trainC, testExp, outdir, prefix) {
+
+    seed1 <- 1000
+    set.seed(seed1)
+
+
+    trainC_names <- names(trainC)
+    trainC_sus <- subset(trainC, trainC == "S")
+    trainC_res <- subset(trainC, trainC == "R")
+    trainC_sus_names <- names(trainC_sus)
+    trainC_res_names <- names(trainC_res)
+
+    print("trainC_names")
+    print("....")
+    print(trainC_names)
+    print("....")
+
+    trainC_sus_lst <- createResample(trainC_sus_names, times = 10)
+    trainC_res_lst <- createResample(trainC_res_names, times = 10)
+
+    single_data_lim <- 10
+    resample_count <- single_data_lim ^2
+    validate_sample_counts <- dim(testExp)[1]
+    print("validate_sample_counts")
+    print(validate_sample_counts)
+    print("....")
+    m <- matrix(0, ncol = validate_sample_counts, nrow = resample_count)
+    pred_df <- data.frame(m)
+    colnames(pred_df) <- rownames(testExp)
+
+    arr1 <- outer(1:single_data_lim, 1:single_data_lim, FUN = "paste", sep = "_")
+    resample_ids <- t(arr1)
+    dim(resample_ids) <- NULL
+    rownames(pred_df) <- resample_ids
+
+
+
+    for (sus_ind in 1:single_data_lim) {
+        for (res_ind in 1:single_data_lim) {
+            lindex <- paste0(sus_ind, "_", res_ind)
+            sus_loc <- trainC_sus_lst[[sus_ind]]
+            res_loc <- trainC_res_lst[[res_ind]]
+            
+            sus_samples <- trainC_sus_names[sus_loc]
+            res_samples <- trainC_res_names[res_loc]
+            ltrainC_names <- c(sus_samples, res_samples)
+            ltrainC <- trainC[ltrainC_names]
+            ltrainExp <- trainExp[ltrainC_names,]
+            lmodT <- do_train(ltrainExp, ltrainC)
+            lprediction <- do_predict(testExp, lmodT)
+            lpred_rnames <- rownames(lprediction[[2]])
+            pred_df[lindex, lpred_rnames] <-lprediction[[2]]$R
+            print(paste0("Validation starts for resample id: ", lindex))
+
+        }
+    }
+
+    R_call <- apply(pred_df, 2, function(x) {sum(x >= 0.5)})
+    S_call <- apply(pred_df, 2, function(x) {sum(x < 0.5)})
+    mean_val <- apply(pred_df, 2, mean)
+    sd_val <- apply(pred_df, 2, sd)
+    se_val <- sd_val /sqrt(validate_sample_counts)
+
+    bootstraping_df <- data.frame(mean_val, sd_val, se_val, R_call, S_call)
+
+    print("Bootstrapping samples")
+    print("....")
+    print(bootstraping_df)
+    print("....")
+
+    BS_raw_file <- paste0(outdir, "/", prefix, "_BS_raw_table.txt")
+    write.table(pred_df, BS_raw_file, sep = "\t", quote = FALSE)
+
+    BS_metrics_file <- paste0(outdir, "/", prefix, "_BS_metrics_table.txt")
+    write.table(bootstraping_df, BS_metrics_file, sep = "\t", quote = FALSE)
+    print("end of Bootstrapping")
+}
+
+
+
 
