@@ -56,6 +56,62 @@ exe_with_all_data <- function(alldata, feature_count, outdir, prefix) {
     write.table(features_df, file = features_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
 }
 
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_EcCip5_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbGent3_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbMero3a_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+exe_LOOCV <- function(infile, no_probe_anno = TRUE, sep = ',') {
+    alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)    
+
+    # Tran and test in a loop
+    lsamples <- colnames(alldata$cdata)
+    sample_count <- length(lsamples)
+    test_sample_vec <- c()
+    resClasses_vec <- c()
+    resProbs_mat <- c()
+    for (lsample in lsamples) {
+        #print(lsample)
+        # Get training samples
+        test_S <- lsample
+        train_S <- setdiff(lsamples, test_S)
+        print("train_S")
+        print(train_S)
+        print("test_S")
+        print(test_S)
+        # Now get accuracy based on training and test for each iteration
+        lclass <- alldata$lclass
+        ltrain_C <- factor(lclass[train_S])
+        ltest_C <- factor(lclass[test_S])
+        cdata <- alldata$cdata
+        features <- rownames(cdata)
+        trainExp <- getExpData(cdata, features, ltrain_C)
+        testExp <- getExpData(cdata, features, ltest_C)
+
+        modT <- do_train(trainExp, ltrain_C)
+        # Now do the test
+        lprediction <- do_predict(testExp, modT)
+        resClasses <- factor(lprediction$resClasses)
+        resProbs <- lprediction$resProbs
+        test_sample_vec <- c(test_sample_vec, lsample)
+        resClasses_vec <- c(resClasses_vec, as.character(resClasses))
+        resProbs_mat <- rbind(resProbs_mat, resProbs)
+    }
+
+    resClasses_vec <- factor(resClasses_vec)
+    resProbs_df <- data.frame(resProbs_mat)
+    rownames(resProbs_df) <- test_sample_vec
+    names(resClasses_vec) <- test_sample_vec
+    prediction$"resClasses" <- factor(resClasses_vec)
+    prediction$"resProbs" <- resProbs_df
+
+    resClasses <- prediction$resClasses
+    testC <- alldata$lclass[test_sample_vec]
+    lcmat <- confusionMatrix(resClasses, testC)
+    
+}
+
 exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
 	# Partition the data, use one half for feature selection and training
 	# and other half for validation, generate a figure
