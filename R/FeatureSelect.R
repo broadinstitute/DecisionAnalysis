@@ -62,7 +62,7 @@ exe_with_all_data <- function(alldata, feature_count, outdir, prefix) {
 
 # infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbMero3a_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
 
-exe_LOOCV <- function(infile, no_probe_anno = TRUE, sep = ',') {
+exe_LOOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
     alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)    
 
     # Tran and test in a loop
@@ -76,10 +76,13 @@ exe_LOOCV <- function(infile, no_probe_anno = TRUE, sep = ',') {
         # Get training samples
         test_S <- lsample
         train_S <- setdiff(lsamples, test_S)
+        
         print("train_S")
         print(train_S)
         print("test_S")
         print(test_S)
+        print("-------------")
+
         # Now get accuracy based on training and test for each iteration
         lclass <- alldata$lclass
         ltrain_C <- factor(lclass[train_S])
@@ -103,6 +106,7 @@ exe_LOOCV <- function(infile, no_probe_anno = TRUE, sep = ',') {
     resProbs_df <- data.frame(resProbs_mat)
     rownames(resProbs_df) <- test_sample_vec
     names(resClasses_vec) <- test_sample_vec
+    prediction <- list()
     prediction$"resClasses" <- factor(resClasses_vec)
     prediction$"resProbs" <- resProbs_df
 
@@ -110,6 +114,153 @@ exe_LOOCV <- function(infile, no_probe_anno = TRUE, sep = ',') {
     testC <- alldata$lclass[test_sample_vec]
     lcmat <- confusionMatrix(resClasses, testC)
     
+    alldata$testC <- testC
+    prediction$"confusionMatrix" <- lcmat
+
+    pred_file <- paste0(outdir, "/", prefix, "_pred.txt")
+    sink(pred_file)
+    print(prediction)
+    sink()
+    plot_file <- paste0(outdir, "/", prefix, "_plot.pdf")
+    print(plot_file)
+    draw_plot(alldata, prediction, features, prefix, plot_file)
+
+    
+}
+
+
+// This would leave two samples at each iteration for test and train on the 
+// other samples.
+
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_EcCip5_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbGent3_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbMero3a_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
+
+exe_LTOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
+    alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
+
+    # Get number of susceptible samples and number of resistant samples
+    lclass <- alldata$lclass
+    # get the S_samples and R_samples
+    all_samples <- names(lclass)
+    S_samples <- names(lclass[lclass == "S"])
+    R_samples <- setdiff(all_samples, S_samples)
+
+    all_count <- length(lclass)
+    S_count <- length(S_samples)
+    R_count <- length(R_samples)
+    
+    # Go over all the susceptible and all the resistant samples to 
+    # create (S -1) * (R -1) training sets; this would be a leave two out 
+    # cross validation
+
+    test_sample_vec <- c()
+    resClasses_vec <- c()
+    resProbs_mat <- c()
+
+    for (S_lsam in S_samples) {
+        for (R_lsam in R_samples) {
+
+            # Build up the training and test set
+            test_S <- c(S_lsam, R_lsam)
+            train_S <- setdiff(all_samples, test_S)
+            ltest_C <- lclass[test_S]
+            ltrain_C <- lclass[train_S]
+
+            print("train_S")
+            print(train_S)
+            print("test_S")
+            print(test_S)
+            print("-------------")
+
+            cdata <- alldata$cdata
+            features <- rownames(cdata)
+            trainExp <- getExpData(cdata, features, ltrain_C)
+            testExp <- getExpData(cdata, features, ltest_C)
+            modT <- do_train(trainExp, ltrain_C)
+            # Now do the test
+            lprediction <- do_predict(testExp, modT)
+            resClasses <- factor(lprediction$resClasses)
+            resProbs <- lprediction$resProbs
+    
+
+            # How to store the data
+            test_sample_vec <- c(test_sample_vec, test_S)
+            resClasses_vec <- c(resClasses_vec, as.character(resClasses))
+            resProbs_mat <- rbind(resProbs_mat, resProbs, make.row.names = FALSE)
+
+        }
+    }
+    resProbs_mat_f <- cbind(test_samples = test_sample_vec, resProbs_mat)    
+    resProbs_mat_f$test_samples<- factor(resProbs_mat_f$test_samples, levels = names(alldata$MIC))
+
+    resClasses <- resClasses_vec
+    names(resClasses) <- test_sample_vec
+    resClasses <- factor(resClasses)
+
+    testC <- lclass[test_sample_vec]
+    lcmat <- confusionMatrix(resClasses, testC)
+
+    prediction <- list()
+    prediction$"resClasses" <- resClasses
+    prediction$"resProbs" <- resProbs_mat
+    
+    alldata$testC <- testC
+    prediction$"confusionMatrix" <- lcmat
+    prediction$"resProbs_mat_f" <- resProbs_mat_f
+
+    pred_file <- paste0(outdir, "/", prefix, "_pred.txt")
+    sink(pred_file)
+    print(prediction)
+    sink()
+
+    #p <- ggplot(resProbs_mat_f, aes(test_sample_vec, R))
+    #p + geom_boxplot()
+
+    plot_file <- paste0(outdir, "/", prefix, "_plot.pdf")
+    print(plot_file)
+    draw_plot_LTOCV(alldata, prediction, features, prefix, plot_file)
+
+}
+
+draw_plot_LTOCV <- function(alldata, prediction, features, prefix, plot_file) {
+    con_mat <- prediction$confusionMatrix 
+    accuracy <- as.numeric(con_mat$overall["Accuracy"])
+    resProbs <- prediction$resProbs
+    
+    labels <- alldata$testC[rownames(resProbs)]
+    predSample <- as.character(resProbs_mat_f[, "test_samples"])
+    predMIC <- as.numeric(alldata$MIC[predSample])
+    lgroups1 <- paste0(predSample, "_", predMIC)
+    lgroups <- factor(lgroups1, levels = lgroups1)
+
+    mid_point <- max(alldata$MIC[alldata$lclass == 'S'])
+    facet_var1 <- ifelse (predMIC <=mid_point , c('Sus'), c('Res'))
+    facet_var <- factor(facet_var1, levels = c("Sus", "Res"))
+
+    probRes <- data.frame(lnames = rownames(resProbs), probs = resProbs[,1], 
+			types = as.character(labels), lgroups = lgroups, 
+			facet_var = facet_var)
+
+    Palette1 <- c('forestgreen', 'red')
+
+    fMap <- alldata$fMap
+    ltitle <- get_title(features, accuracy, fMap, prefix)
+    resProbs_mat_f <- prediction$resProbs_mat_f
+    plt <- ggplot(resProbs_mat_f, aes(test_samples, R))
+    plt + geom_boxplot()
+
+    plt <- ggplot(probRes, aes(x = lgroups, y = probs, colour = facet_var)) +
+        geom_point(size = 3) +
+        facet_grid(. ~ facet_var, scales = "free", space = "free") + 
+        scale_colour_manual(values=Palette1) + 
+        theme(axis.text.x = element_text(size=10,angle= 45))  + 
+        xlab("Strain_MIC") + ylab("Probablity of resistance") +
+		labs(colour='Strain\ngroups') + ggtitle(ltitle) 
+
+    ggsave(plot_file)
 }
 
 exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
@@ -176,7 +327,6 @@ exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
     draw_plot(alldata2, prediction, features, prefix, plot_file)
 
 }
-
 
 draw_plot <- function(alldata, prediction, features, prefix, plot_file) {
     con_mat <- prediction$confusionMatrix 
