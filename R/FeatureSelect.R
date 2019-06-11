@@ -56,13 +56,8 @@ exe_with_all_data <- function(alldata, feature_count, outdir, prefix) {
     write.table(features_df, file = features_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
 }
 
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_EcCip5_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbGent3_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbMero3a_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-exe_LOOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
+Leave_One_Out_CV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
+    dir.create(outdir, recursive = TRUE)
     alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)    
 
     # Tran and test in a loop
@@ -128,17 +123,8 @@ exe_LOOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
     
 }
 
-
-// This would leave two samples at each iteration for test and train on the 
-// other samples.
-
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_EcCip5_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbGent3_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-# infile <- '/home/unix/nirmalya/research/DA_data_new/2019May23_AcbMero3a_BCx_spikes_runs1-2_allRespNormFold_forDA.csv'
-
-exe_LTOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
+Leave_Two_Out_CV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
+    dir.create(outdir, recursive = TRUE)
     alldata <- loadData(inpath = infile, no_probe_anno = no_probe_anno, sepstr = sep)
 
     # Get number of susceptible samples and number of resistant samples
@@ -219,28 +205,35 @@ exe_LTOCV <- function(infile, outdir, prefix, no_probe_anno = TRUE, sep = ',') {
     #p <- ggplot(resProbs_mat_f, aes(test_sample_vec, R))
     #p + geom_boxplot()
 
-    plot_file <- paste0(outdir, "/", prefix, "_plot.pdf")
-    print(plot_file)
-    draw_plot_LTOCV(alldata, prediction, features, prefix, plot_file)
+    point_plot_file <- paste0(outdir, "/", prefix, "_point_plot.pdf")
+    print(point_plot_file)
+    box_plot_file <- paste0(outdir, "/", prefix, "_box_plot.pdf")
+    print(box_plot_file)
+    draw_plot_LTOCV(alldata, prediction, features, prefix, point_plot_file,
+        box_plot_file)
 
 }
 
-draw_plot_LTOCV <- function(alldata, prediction, features, prefix, plot_file) {
+draw_plot_LTOCV <- function(alldata, prediction, features, prefix, point_plot_file, box_plot_file) {
     con_mat <- prediction$confusionMatrix 
     accuracy <- as.numeric(con_mat$overall["Accuracy"])
     resProbs <- prediction$resProbs
+    resProbs_mat_f <- prediction$resProbs_mat_f
     
-    labels <- alldata$testC[rownames(resProbs)]
-    predSample <- as.character(resProbs_mat_f[, "test_samples"])
+    predSample <- resProbs_mat_f$test_samples
+    labels <- alldata$testC[predSample]
+    predSample_u <- names(alldata$MIC)
+    predMIC_u <- as.numeric(alldata$MIC[predSample_u])
     predMIC <- as.numeric(alldata$MIC[predSample])
     lgroups1 <- paste0(predSample, "_", predMIC)
-    lgroups <- factor(lgroups1, levels = lgroups1)
+    lgroups1_u <- paste0(predSample_u, "_", predMIC_u)
+    lgroups <- factor(lgroups1, levels = lgroups1_u)
 
     mid_point <- max(alldata$MIC[alldata$lclass == 'S'])
     facet_var1 <- ifelse (predMIC <=mid_point , c('Sus'), c('Res'))
     facet_var <- factor(facet_var1, levels = c("Sus", "Res"))
 
-    probRes <- data.frame(lnames = rownames(resProbs), probs = resProbs[,1], 
+    probRes <- data.frame(lnames = predSample, probs = resProbs[,1], 
 			types = as.character(labels), lgroups = lgroups, 
 			facet_var = facet_var)
 
@@ -249,18 +242,26 @@ draw_plot_LTOCV <- function(alldata, prediction, features, prefix, plot_file) {
     fMap <- alldata$fMap
     ltitle <- get_title(features, accuracy, fMap, prefix)
     resProbs_mat_f <- prediction$resProbs_mat_f
-    plt <- ggplot(resProbs_mat_f, aes(test_samples, R))
-    plt + geom_boxplot()
 
     plt <- ggplot(probRes, aes(x = lgroups, y = probs, colour = facet_var)) +
-        geom_point(size = 3) +
+        geom_point(size = 2) + 
+        facet_grid(. ~ facet_var, scales = "free", space = "free") + 
+        scale_colour_manual(values=Palette1) + 
+        theme(axis.text.x = element_text(size=10,angle= 45))  + 
+        xlab("Strain_MIC") + ylab("Probablity of resistance") +
+		labs(colour = 'Strain\ngroups') + ggtitle(ltitle) 
+
+    ggsave(point_plot_file)
+
+    plt <- ggplot(probRes, aes(x = lgroups, y = probs, colour = facet_var)) +
+        geom_point(size = 2) + geom_boxplot() + 
         facet_grid(. ~ facet_var, scales = "free", space = "free") + 
         scale_colour_manual(values=Palette1) + 
         theme(axis.text.x = element_text(size=10,angle= 45))  + 
         xlab("Strain_MIC") + ylab("Probablity of resistance") +
 		labs(colour='Strain\ngroups') + ggtitle(ltitle) 
 
-    ggsave(plot_file)
+    ggsave(box_plot_file)
 }
 
 exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
