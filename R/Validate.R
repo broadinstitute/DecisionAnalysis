@@ -26,6 +26,10 @@ validate <- function(train_file, validate_file, outdir, prefix, feature_count, s
     print(modT)
     print("....")
 
+    # The save the model to the outfile
+    model_file <- paste0(outdir, "/", prefix, "_model.rds")
+    saveRDS(modT, model_file)
+
     testExp <- get_exp_for_validate(validate_data, features)
     prediction <- do_predict(testExp, modT)
 
@@ -41,6 +45,7 @@ validate <- function(train_file, validate_file, outdir, prefix, feature_count, s
     print("end of prediction")
     
 }
+
 
 validate_BS <- function(train_file, validate_file, outdir, prefix, feature_count, sep) {
 
