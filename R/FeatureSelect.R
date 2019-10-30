@@ -278,6 +278,11 @@ exe_without_all_data <- function(alldata, feature_count, outdir, prefix) {
 	# get the expression for the training
 	trainExp <- getExpData(cdata, features, trainC)
 	modT <- do_train(trainExp, trainC)
+
+    # The save the model to the outfile
+    model_file <- paste0(outdir, "/", prefix, "_model.rds")
+    saveRDS(modT, model_file)
+
 	# Do the test
 	testC <- alldata2$testC
 
